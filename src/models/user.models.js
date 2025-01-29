@@ -25,16 +25,16 @@ const userSchema = Schema(
       trim: true,
       index: true,
     },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+    },
     avtar: {
       type: String,
       required: true,
     },
     coverImage: {
       type: String,
-    },
-    password: {
-      type: String,
-      required: [true, "Password is required"],
     },
     watchHistory: [
       {
@@ -87,4 +87,4 @@ userSchema.methods.generateRefreshToken = function () {
   );
 };
 
-const User = mongoose.model("User", userSchema);
+export const User = mongoose.model("User", userSchema);
