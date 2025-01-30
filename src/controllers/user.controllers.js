@@ -1,9 +1,12 @@
 import { ApiError } from "../utils/ApiErr.js";
 import { User } from "../models/user.models.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadOnCloudinary,
+  deleteFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { storage } from "../middlewares/multer.middleware.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefereshTokens = async (userId) => {
   try {
@@ -114,7 +117,6 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Invalid user credentials");
   }
 
-
   const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
     user._id
   );
@@ -168,4 +170,141 @@ const logoutUser = asyncHandler(async (req, res) => {
     .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "User logged out"));
 });
-export { registerUser, loginUser, logoutUser };
+
+const refreshAccessToken = asyncHandler(async (req, res) => {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(400, "Invalid refresh token ");
+  }
+
+  const decodedRefreshToken = await jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  if (!decodedRefreshToken) {
+    throw new ApiError(400, "refresh token expired");
+  }
+
+  const user = await User.findById(decodedRefreshToken?._id).select(
+    "-password -refreshToken"
+  );
+
+  if (!user) {
+    throw new ApiError(400, "invalid refresh token");
+  }
+
+  if (incomingRefreshToken !== user?.refreshToken) {
+    throw new ApiError("refresh token expired or used");
+  }
+
+  const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+    decodedRefreshToken._id
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // Use true only in production
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" for cross-origin
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  };
+  return res
+    .status(200)
+    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, options)
+    .json(new ApiResponse(200, user, "new tokens generated successfully"));
+});
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const incomingUser = req.user;
+  const { oldPassword, newPassword } = req.body;
+
+  if (!(oldPassword && newPassword)) {
+    throw new ApiError(400, "all fields are required");
+  }
+
+  const user = await User.findById(incomingUser._id);
+
+  const isPasswordCorrect = user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "password is incorrect");
+  }
+
+  user.password = newPassword;
+
+  await user.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "password updated successfully"));
+});
+
+const getCurrentUser = asyncHandler((req, res) => {
+  return res.status(200).json(new ApiResponse(200, req.user, "user found"));
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+
+  if (!(fullName && email)) {
+    throw new ApiError(400, "all fields are required");
+  }
+
+  const incomingUser = req.user;
+
+  const user = await User.findByIdAndUpdate(
+    incomingUser?._id,
+    { $set: { fullName, email } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  if (!user) {
+    throw new ApiError(500, "error updating user");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "fields updated successfully"));
+});
+
+const updateUserAvtar = asyncHandler(async (req, res) => {
+  const newAvtarLocalPath = req.file.path;
+
+  if (!newAvtarLocalPath) {
+    throw new ApiError(400, "Avtar image is required");
+  }
+
+  const incomingUser = req.user;
+
+  const urlPath = incomingUser.avtar;
+  const isDeleted = await deleteFromCloudinary(urlPath);
+
+  if (!isDeleted) {
+    console.log("image could not be deleted");
+  }
+  const updatedAvtar = await uploadOnCloudinary(newAvtarLocalPath);
+
+  const user = await User.findByIdAndUpdate(
+    incomingUser._id,
+    { $set: { avtar: updatedAvtar?.url } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "avtar updated successfully"));
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+  updateUserAvtar,
+};

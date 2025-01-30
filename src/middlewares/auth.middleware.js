@@ -3,7 +3,7 @@ import { User } from "../models/user.models.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiErr.js";
 
-const verifyJwt = asyncHandler(async (req, res, next) => {
+const verifyJwt = asyncHandler(async (req, _, next) => {
   const accessToken =
     req.cookies?.accessToken ||
     req.header("Authorization")?.replace("Bearer ", "");
