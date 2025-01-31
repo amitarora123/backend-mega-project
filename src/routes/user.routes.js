@@ -26,15 +26,18 @@ router.route("/login").post(upload.none(), loginUser);
 //secure routes
 
 router.route("/logout").post(verifyJwt, logoutUser);
-router.route("/refresh-token").post(verifyJwt, refreshAccessToken);
+
+router.route("/refresh-token").post(refreshAccessToken);
+
 router
   .route("/change-password")
-  .post(upload.none(), verifyJwt, changeCurrentPassword);
+  .patch(upload.none(), verifyJwt, changeCurrentPassword);
+
 router
   .route("/change-details")
-  .post(upload.none(), verifyJwt, updateAccountDetails);
+  .patch(upload.none(), verifyJwt, updateAccountDetails);
 
 router
   .route("/update-avtar")
-  .post(upload.single("avtar"), verifyJwt, updateUserAvtar);
+  .patch(upload.single("avtar"), verifyJwt, updateUserAvtar);
 export default router;
