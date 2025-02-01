@@ -11,6 +11,7 @@ import {
   updateUserCoverImage,
   getUserChannel,
   getWatchHistory,
+  getCurrentUser,
 } from "../controllers/user.controllers.js";
 import verifyJwt from "../middlewares/auth.middleware.js";
 
@@ -39,7 +40,7 @@ router
 router
   .route("/change-details")
   .patch(upload.none(), verifyJwt, updateAccountDetails);
-
+router.route("/getCurrentUser").get(verifyJwt, getCurrentUser);
 router
   .route("/update-avtar")
   .patch(upload.single("avtar"), verifyJwt, updateUserAvtar);
