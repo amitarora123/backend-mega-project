@@ -7,7 +7,8 @@ import {
   refreshAccessToken,
   changeCurrentPassword,
   updateAccountDetails,
-  updateUserAvtar
+  updateUserAvtar,
+  getUserChannel
 } from "../controllers/user.controllers.js";
 import verifyJwt from "../middlewares/auth.middleware.js";
 
@@ -40,4 +41,7 @@ router
 router
   .route("/update-avtar")
   .patch(upload.single("avtar"), verifyJwt, updateUserAvtar);
+
+router.route("/channel-profile/c/:channel").get(verifyJwt, getUserChannel);
+
 export default router;

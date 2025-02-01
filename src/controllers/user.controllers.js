@@ -175,8 +175,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   const incomingRefreshToken =
     req.cookies.refreshToken || req.body.refreshToken;
 
-  console.log("incoming refresh token: ", incomingRefreshToken);
-
   if (!incomingRefreshToken) {
     throw new ApiError(400, "Invalid refresh token ");
   }
@@ -191,8 +189,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(decodedRefreshToken?._id).lean();
-
-  console.log("user refresh token: ", user.refreshToken);
 
   if (!user) {
     throw new ApiError(400, "invalid refresh token");
@@ -303,6 +299,78 @@ const updateUserAvtar = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "avtar updated successfully"));
 });
 
+const getUserChannel = asyncHandler(async (req, res) => {
+  const incomingChannelUserName = req.params.channel;
+
+  if (!incomingChannelUserName?.trim()) {
+    throw new ApiError(400, "channel id is required");
+  }
+
+  const incomingUser = req.user;
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: incomingChannelUserName?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers",
+        },
+        subscribedCount: {
+          $size: "$subscribedTo",
+        },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [incomingUser?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribedCount: 1,
+        isSubscribed: 1,
+        avtar: 1,
+        coverImage: 1,
+        email: 1,
+      },
+    },
+  ]);
+
+  if (!channel?.length) {
+    throw new ApiError(404, "channel does not exist");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, channel, "channel fetched successfully"));
+});
+
 export {
   registerUser,
   loginUser,
@@ -312,4 +380,5 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvtar,
+  getUserChannel,
 };
