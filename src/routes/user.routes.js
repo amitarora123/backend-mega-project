@@ -10,6 +10,7 @@ import {
   updateUserAvtar,
   updateUserCoverImage,
   getUserChannel,
+  getWatchHistory,
 } from "../controllers/user.controllers.js";
 import verifyJwt from "../middlewares/auth.middleware.js";
 
@@ -48,5 +49,7 @@ router
   .patch(upload.single("coverImage"), verifyJwt, updateUserCoverImage);
 
 router.route("/channel-profile/c/:channel").get(verifyJwt, getUserChannel);
+
+router.route("/watchHistory").get(verifyJwt, getWatchHistory);
 
 export default router;

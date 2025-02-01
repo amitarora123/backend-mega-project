@@ -384,6 +384,7 @@ const getUserChannel = asyncHandler(async (req, res) => {
         fullName: 1,
         username: 1,
         subscribedCount: 1,
+        subscriberCount: 1,
         isSubscribed: 1,
         avtar: 1,
         coverImage: 1,
@@ -401,6 +402,78 @@ const getUserChannel = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, channel, "channel fetched successfully"));
 });
 
+const getWatchHistory = asyncHandler(async (req, res) => {
+  const userWatchHistory = await User.aggregate([
+    {
+      $match: {
+        _id: req.user?._id,
+      },
+    },
+
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: {
+                    username: 1,
+                    fullName: 1,
+                    avtar: 1,
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+
+    {
+      $addFields: {
+        owner: {
+          $first: "$owner",
+        },
+      },
+    },
+
+    {
+      $project: {
+        username: 1,
+        fullName: 1,
+        watchHistory: 1,
+      },
+    },
+  ]);
+
+  if (!userWatchHistory && userWatchHistory.length === 0) {
+    throw new ApiError(
+      500,
+      "internal server error, couldn't able to fetch watch history"
+    );
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        userWatchHistory[0],
+        "user's watch history fetched successfully"
+      )
+    );
+});
+
 export {
   registerUser,
   loginUser,
@@ -412,4 +485,5 @@ export {
   updateUserAvtar,
   updateUserCoverImage,
   getUserChannel,
+  getWatchHistory,
 };
