@@ -15,7 +15,7 @@ const playlistSchema = Schema(
       ref: "User",
       required: true,
     },
-    videos: [{ type: Schema.Types.ObjectId, ref: "Video" }],
+    videos: [{ type: Schema.Types.ObjectId, ref: "Video", unique: true }],
   },
   { timestamps: true }
 );
