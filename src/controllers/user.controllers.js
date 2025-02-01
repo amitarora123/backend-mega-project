@@ -298,6 +298,36 @@ const updateUserAvtar = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "avtar updated successfully"));
 });
+const updateUserCoverImage = asyncHandler(async (req, res) => {
+  const newCoverImagePath = req.file.path;
+
+  if (!newCoverImagePath) {
+    throw new ApiError(400, "Avtar image is required");
+  }
+
+  const incomingUser = req.user;
+
+  const urlPath = incomingUser.coverImage;
+
+  if (urlPath) {
+    const isDeleted = await deleteFromCloudinary(urlPath);
+    if (!isDeleted) {
+      console.log("image could not be deleted");
+    }
+  }
+
+  const updateCoverImage = await uploadOnCloudinary(newCoverImagePath);
+
+  const user = await User.findByIdAndUpdate(
+    incomingUser._id,
+    { $set: { coverImage: updateCoverImage?.url } },
+    { new: true }
+  ).select("-password -refreshToken");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "cover image updated successfully"));
+});
 
 const getUserChannel = asyncHandler(async (req, res) => {
   const incomingChannelUserName = req.params.channel;
@@ -380,5 +410,6 @@ export {
   getCurrentUser,
   updateAccountDetails,
   updateUserAvtar,
+  updateUserCoverImage,
   getUserChannel,
 };
