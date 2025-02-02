@@ -5,7 +5,6 @@ import { ApiError } from "../utils/ApiErr.js";
 
 export const isUserSubscribedMiddleware = asyncHandler(async (req, _, next) => {
   const incomingChannelUserName = req.params.channel;
-  console.log(incomingChannelUserName);
   if (!incomingChannelUserName) {
     throw new ApiError(400, "Channel username is required");
   }

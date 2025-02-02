@@ -284,7 +284,7 @@ const updateUserAvtar = asyncHandler(async (req, res) => {
   const isDeleted = await deleteFromCloudinary(urlPath);
 
   if (!isDeleted) {
-    console.log("image could not be deleted");
+    throw new ApiError(500, "image could not be deleted");
   }
   const updatedAvtar = await uploadOnCloudinary(newAvtarLocalPath);
 
@@ -312,7 +312,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   if (urlPath) {
     const isDeleted = await deleteFromCloudinary(urlPath);
     if (!isDeleted) {
-      console.log("image could not be deleted");
+      throw new ApiError(500, "image could not be deleted");
     }
   }
 

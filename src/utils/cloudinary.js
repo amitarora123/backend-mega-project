@@ -25,7 +25,6 @@ const uploadOnCloudinary = async (localFilePath) => {
       resource_type: "auto",
     });
 
-    console.log("file is uploaded on cloudinary ", response.url);
     fs.unlinkSync(localFilePath);
     return response;
   } catch (error) {
@@ -39,25 +38,18 @@ const deleteFromCloudinary = async (urlPath) => {
   try {
     const publicId = extractPublicId(urlPath);
 
-    console.log(publicId);
     if (!publicId) {
-      console.log("Could not extract public id from url");
       return false;
     }
 
     const result = await cloudinary.uploader.destroy(publicId);
 
-    console.log(result);
-
     if (result.result === "ok") {
-      console.log("inside the true condition");
       return true;
     } else {
-      console.log("Image could not be deleted", result);
       return false;
     }
   } catch (error) {
-    console.log("image could not be deleted from cloudinary", error);
     return false;
   }
 };

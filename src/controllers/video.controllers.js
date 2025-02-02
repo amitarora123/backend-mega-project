@@ -6,10 +6,10 @@ import {
   deleteFromCloudinary,
   uploadOnCloudinary,
 } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 const getAllvideos = asyncHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType } = req.query;
-  console.log(sortBy);
   if (!["views", "title", "duration"].includes(sortBy)) {
     throw new ApiError(
       400,
@@ -72,13 +72,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
 
 const getVideoById = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  console.log(videoId);
   if (!videoId) {
     throw new ApiError(400, "video id is required");
   }
 
   const video = await Video.findById(videoId);
-  console.log(video);
   if (!video) {
     throw new ApiError(400, "invalid video id");
   }
@@ -95,7 +93,6 @@ const updateVideo = asyncHandler(async (req, res) => {
     throw new ApiError(400, "video id is required");
   }
   const { title, description } = req.body;
-  console.log(title);
   const thumbnailLocalPath = req.file?.path;
 
   if (!(title || description || thumbnailLocalPath)) {
@@ -144,7 +141,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
-  console.log(videoId);
   if (!videoId) throw new ApiError(400, "video id is required");
 
   const updatedVideo = await Video.findByIdAndUpdate(
@@ -154,7 +150,6 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     },
     { new: true }
   );
-  console.log(updatedVideo);
   if (!updatedVideo)
     throw new ApiError(400, "video with that video id does not exist");
 
@@ -162,7 +157,27 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, updatedVideo, "video updated successfully"));
 });
+const increaseView = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
 
+  if (!mongoose.Types.ObjectId.isValid(videoId)) {
+    throw new ApiError(400, "Invalid video ID");
+  }
+
+  const video = await Video.findByIdAndUpdate(
+    videoId,
+    { $inc: { views: 1 } },
+    { new: true }
+  ).select("-owner");
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video viewed successfully"));
+});
 export {
   getAllvideos,
   publishAVideo,
@@ -170,4 +185,5 @@ export {
   updateVideo,
   deleteVideo,
   togglePublishStatus,
+  increaseView,
 };
