@@ -8,7 +8,7 @@ const isSubscribed = asyncHandler(async (req, res) => {
     .status(200)
     .json(
       200,
-      { channel: req.owner },
+      { isSubscribed: req.owner.isSubscribed },
       "subscription details fetched successfully"
     );
 });
@@ -56,4 +56,11 @@ const unSubscribeChannel = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Channel unsubscribed successfully"));
 });
 
-export { subscribeChannel, unSubscribeChannel, isSubscribed };
+const getUserChannelSubscribers = asyncHandler(async (req, res) => {
+  const { channelId } = req.params;
+  const subscribers = await Subscription.find({ channel: channelId })
+    .populate("subscriber", "fullName username avtar")
+    .exec();
+  res.status(200).json(subscribers);
+});
+export { subscribeChannel, unSubscribeChannel, isSubscribed , getUserChannelSubscribers};
