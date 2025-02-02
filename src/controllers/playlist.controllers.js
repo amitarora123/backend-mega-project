@@ -111,10 +111,74 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     );
 });
 
+const deletePlaylist = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+
+  if (!playlistId) throw new ApiError(400, "playlist id is required");
+
+  const userId = req.user?._id;
+
+  const deletedPlaylist = await Playlist.deleteOne({
+    _id: playlistId,
+    owner: userId,
+  });
+
+  if (!deletedPlaylist)
+    throw new ApiError(
+      400,
+      "playlist doesn't exist or user doesn't have access to delete the playlist"
+    );
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, deletedPlaylist, "playlist deleted successfully")
+    );
+});
+
+const updatePlaylist = asyncHandler(async (req, res) => {
+  const { playlistId } = req.params;
+
+  if (!playlistId) throw new ApiError(400, "playlist id is required");
+
+  const { name, description } = req.body;
+
+  if (!(name || description))
+    throw new ApiError(400, "one update field is required");
+
+  const updateFields = {};
+  if (name) updateFields.name = name;
+  if (description) updateFields.description = description;
+
+  console.log(updateFields);
+
+  const isUpdated = await Playlist.updateOne(
+    { _id: playlistId, owner: req.user?._id },
+    {
+      $set: updateFields,
+    }
+  );
+
+  if (!isUpdated)
+    throw new ApiError(
+      400,
+      "user can't update the playlist or playlist doesn't exist"
+    );
+
+  const updatedPlaylist = await Playlist.findById(playlistId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, updatedPlaylist, "playlist updated successfully")
+    );
+});
 export {
   createPlaylist,
   getUserPlaylist,
   getPlaylistById,
   addVideoToPlaylist,
   removeVideoFromPlaylist,
+  deletePlaylist,
+  updatePlaylist,
 };
