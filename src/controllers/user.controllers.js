@@ -40,7 +40,6 @@ const registerUser = asyncHandler(async (req, res) => {
   // return res
 
   const { username, email, fullName, password } = req.body;
-
   if (
     [username, email, fullName, password].some((field) => field.trim() === "")
   ) {
@@ -88,7 +87,7 @@ const registerUser = asyncHandler(async (req, res) => {
   if (!createdUser) {
     throw new ApiError(501, "Something went wrong while registering the user");
   }
-
+  console.log("user created successfully");
   return res
     .status(200)
     .json(new ApiResponse(200, createdUser, "user created successfully"));
@@ -124,10 +123,10 @@ const loginUser = asyncHandler(async (req, res) => {
     "-password -refreshToken"
   );
   const options = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", // Use true only in production
-    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // "none" for cross-origin
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000, // MS
+    httpOnly: true, // prevent XSS attacks cross-site scripting attacks
+    sameSite: "strict", // CSRF attacks cross-site request forgery attacks
+    secure: process.env.NODE_ENV !== "development",
   };
 
   return res
