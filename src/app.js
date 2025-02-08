@@ -6,7 +6,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: 'http://localhost:5173',
+    origin: "http://localhost:5173",
     credentials: true,
   })
 );
@@ -24,8 +24,10 @@ import commentRouter from "./routes/comment.routes.js";
 import likeRouter from "./routes/likes.routes.js";
 import playlistRouter from "./routes/playlist.routes.js";
 import dashboardRouter from "./routes/dashboard.routes.js";
+import { ApiError } from "./utils/ApiErr.js";
 
 //routes declaration
+
 app.use("/api/v1/healthcheck", healthcheckRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/tweets", tweetRouter);
@@ -35,4 +37,23 @@ app.use("/api/v1/comments", commentRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlistRouter);
 app.use("/api/v1/dashboard", dashboardRouter);
+
+app.use((err, req, res, next) => {
+  console.error("Error:", err);
+
+  if (err instanceof ApiError) {
+    return res.status(err.statusCode).json({
+      success: false,
+      message: err.message,
+      errors: err.errors || [],
+    });
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+    errors: [],
+  });
+});
+
 export { app };

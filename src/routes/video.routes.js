@@ -8,31 +8,30 @@ import {
   publishAVideo,
   togglePublishStatus,
   updateVideo,
-  increaseView
+  increaseView,
 } from "../controllers/video.controllers.js";
 
 const router = Router();
-router.use(verifyJwt);
 
-router
-  .route("/")
-  .get(getAllvideos)
-  .post(
-    upload.fields([
-      { name: "videoFile", maxCount: 1 },
-      { name: "thumbnail", maxCount: 1 },
-    ]),
-    publishAVideo
-  );
+router.route("/").get(getAllvideos);
+
+
+router.route("/").post(verifyJwt, 
+  upload.fields([
+    { name: "videoFile", maxCount: 1 },
+    { name: "thumbnail", maxCount: 1 },
+  ]),
+  publishAVideo
+);
 
 router
   .route("/:videoId")
   .get(getVideoById)
-  .delete(deleteVideo)
-  .patch(upload.single("thumbnail"), updateVideo);
+  .delete(verifyJwt, deleteVideo)
+  .patch(verifyJwt, upload.single("thumbnail"), updateVideo);
 
-router.route("/toggle/publish/:videoId").patch(togglePublishStatus);
+router.route("/toggle/publish/:videoId").patch(verifyJwt, togglePublishStatus);
 
-router.route("/view/:videoId").patch(increaseView)
+router.route("/view/:videoId").patch(verifyJwt,increaseView);
 
 export default router;

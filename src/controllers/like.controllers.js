@@ -1,4 +1,4 @@
-import mongoose, { isValidObjectId } from "mongoose";
+import { isValidObjectId } from "mongoose";
 import { Like } from "../models/likes.models.js";
 import { ApiError } from "../utils/ApiErr.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -88,4 +88,25 @@ const getLikedVideos = asyncHandler(async (req, res) => {
     );
 });
 
-export { toggleCommentLike, toggleTweetLike, toggleVideoLike, getLikedVideos };
+const getVideoLikes = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId))
+    throw new ApiError(400, "please provide a valid videoId");
+
+  const likes = await Like.find({ video: videoId });
+
+  if (!likes) throw new ApiError(400, "please provide a valid videoId");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { likes }, "video likes fetched successfully"));
+});
+
+export {
+  toggleCommentLike,
+  toggleTweetLike,
+  toggleVideoLike,
+  getLikedVideos,
+  getVideoLikes,
+};

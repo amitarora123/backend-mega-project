@@ -4,14 +4,15 @@ import {
   toggleCommentLike,
   toggleVideoLike,
   toggleTweetLike,
+  getVideoLikes,
 } from "../controllers/like.controllers.js";
 import verifyJwt from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.route("/toggle/v/:videoId").post(verifyJwt, toggleVideoLike);
-router.route("/toggle/c/:commentId").post(verifyJwt, toggleCommentLike);
-router.route("/toggle/t/:tweetId").post(verifyJwt, toggleTweetLike);
+router.route("/toggle/v/:videoId").put(verifyJwt, toggleVideoLike);
+router.route("/toggle/c/:commentId").put(verifyJwt, toggleCommentLike);
+router.route("/toggle/t/:tweetId").put(verifyJwt, toggleTweetLike);
 router.route("/videos").get(verifyJwt, getLikedVideos);
-
+router.route("/getlikes/v/:videoId").get(verifyJwt, getVideoLikes);
 export default router;
